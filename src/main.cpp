@@ -18,6 +18,7 @@
 #include <string>
 #include <exception>
 #include <vector>
+#include <utility>
 
 #include <msgpack.hpp>
 #include <jubatus/core/common/big_endian.hpp>
@@ -55,12 +56,24 @@ void read(std::ifstream& ifs, model& m) {
   // jubatus::server::framework::save_server/load_server, or to use these
   // methods to show file format errors.
 
+    // std::cout << "==== ifs start===" << std::endl;
+    // std::string data(ifs.tellg(), '\0');
+    // std::cout << data << std::endl;
+    // std::cout << "==== ifs end===" << std::endl;
+    
   ifs.exceptions(std::ifstream::failbit);
 
   std::vector<char> system_data_buf;
   try {
     char header_buf[48];
     ifs.read(header_buf, 48);
+
+    std::cout << "header_buf[48] start" << std::endl;
+    for (int i=0; i< sizeof(header_buf)/sizeof(header_buf[0]) ; ++i) {
+        std::cout << header_buf[i];
+    }
+    std::cout << std::endl;
+    std::cout << "header_buf[48] end" << std::endl;
 
     uint64_t system_data_size = read_big_endian<uint64_t>(&header_buf[32]);
     system_data_buf.resize(system_data_size);
@@ -193,9 +206,10 @@ int run(const std::string& path) try {
 
 
 int main(int argc, char* argv[]) {
-  cmdline::parser p;
-  p.add<std::string>("input", 'i', "Input file");
-  p.parse_check(argc, argv);
-
-  return jubatus::dump::run(p.get<std::string>("input"));
+    std::cout << "=== custom jubadump start ===" << std::endl;
+    cmdline::parser p;
+    p.add<std::string>("input", 'i', "Input file");
+    p.parse_check(argc, argv);
+    
+    return jubatus::dump::run(p.get<std::string>("input"));
 }
