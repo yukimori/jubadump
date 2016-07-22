@@ -66,19 +66,28 @@ void read(std::ifstream& ifs, model& m) {
   std::vector<char> system_data_buf;
   try {
     char header_buf[48];
-    ifs.read(header_buf, 48);
+    ifs.read(header_buf, 48);  // 48bytes分の情報を読み込む
 
     std::cout << "header_buf[48] start" << std::endl;
     for (int i=0; i< sizeof(header_buf)/sizeof(header_buf[0]) ; ++i) {
-        std::cout << header_buf[i];
+        std::cout << std::hex << header_buf[i]; // 正しく表示されない
     }
     std::cout << std::endl;
     std::cout << "header_buf[48] end" << std::endl;
 
+    // 33バイト目からuint64(=8byte)分の情報をビックエンディアンとして読み込む
     uint64_t system_data_size = read_big_endian<uint64_t>(&header_buf[32]);
     system_data_buf.resize(system_data_size);
+    // 学習モデルからsystem_dataを読み込む
     ifs.read(&system_data_buf[0], system_data_size);
 
+    /**
+       read_big_endian()は以下で定義されている　※ビッグエンディアンはレジスタ最上位バイトがメモリ上の一番小さい番地に配置される
+       https://github.com/jubatus/jubatus_core/blob/master/jubatus/core/common/big_endian.hpp
+    **/
+
+    // header_bufの41バイト目から8byte(=uint64_t)の情報をユーザデータとして読み込む
+    // そのためにデータサイズ8byteを取得する
     uint64_t user_data_size = read_big_endian<uint64_t>(&header_buf[40]);
     m.user_data_.resize(user_data_size);
     ifs.read(&m.user_data_[0], user_data_size);
@@ -127,6 +136,7 @@ int run(const std::string& path) try {
   jubatus::util::text::json::json js;
 
   try {
+      // 学習モデルの読み込み
     read(ifs, m);
   } catch (const std::exception& e) {
     throw runtime_error(std::string("invalid model file structure: ") +
